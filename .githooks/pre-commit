@@ -1,0 +1,22 @@
+#!/bin/sh
+# Rebuilds and stages dyspatch.plugin whenever plugin sources are staged.
+
+PLUGIN_DIR=dyspatch-claude-plugin
+PACKAGE=$PLUGIN_DIR/dyspatch.plugin
+TAG_PREFIX=dyspatch-plugin-v
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+if git diff --cached --quiet -- "$PLUGIN_DIR" ":!$PACKAGE"; then
+	exit 0
+fi
+
+scripts/build-plugin.sh "$PACKAGE" || exit 1
+git add "$PACKAGE" || exit 1
+
+version=$(git show ":$PLUGIN_DIR/.claude-plugin/plugin.json" |
+	sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+if git rev-parse -q --verify "refs/tags/$TAG_PREFIX$version" >/dev/null; then
+	echo "Note: plugin version $version is already released." \
+		"Bump \"version\" in plugin.json to cut a new release."
+fi

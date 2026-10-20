@@ -1,0 +1,15 @@
+#!/bin/sh
+# Tags a release whenever the committed plugin.json has a version not yet tagged.
+
+PLUGIN_DIR=dyspatch-claude-plugin
+TAG_PREFIX=dyspatch-plugin-v
+
+version=$(git show "HEAD:$PLUGIN_DIR/.claude-plugin/plugin.json" 2>/dev/null |
+	sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+[ -n "$version" ] || exit 0
+
+tag=$TAG_PREFIX$version
+if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+	git tag -a "$tag" -m "Dyspatch Claude plugin $version" &&
+		echo "Tagged release $tag (push with: git push --follow-tags)"
+fi
