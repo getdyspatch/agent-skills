@@ -1,8 +1,15 @@
 {
   "name": "dyspatch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build production emails in Dyspatch with Claude, from your existing workspaces, themes, blocks, brand guidelines and image library, via the Dyspatch MCP server.",
-  "author": { "name": "Dyspatch" },
+  "author": {
+    "name": "Dyspatch"
+  },
   "homepage": "https://www.dyspatch.io",
-  "keywords": ["dyspatch", "email", "mcp", "email production"]
+  "keywords": [
+    "dyspatch",
+    "email",
+    "mcp",
+    "email production"
+  ]
 }
