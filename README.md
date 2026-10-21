@@ -4,8 +4,8 @@ Agent skills for [Dyspatch](https://www.dyspatch.io), packaged as a Claude plugi
 the best use of the Dyspatch MCP server: they call its tools by name, keep calls few and parallel, and confirm before
 they change anything in your account.
 
-**Download:** get the latest `dyspatch-<version>.plugin` from the
-[GitHub releases page](https://github.com/getdyspatch/agent-skills/releases).
+**Download:** [the latest `dyspatch.plugin`](https://github.com/getdyspatch/agent-skills/releases/latest/download/dyspatch.plugin).
+Earlier versions and release notes are on the [GitHub releases page](https://github.com/getdyspatch/agent-skills/releases).
 
 ## The Dyspatch plugin
 
@@ -34,8 +34,7 @@ Plugins are shared between Claude on the web, the Claude Desktop app and Cowork,
 
 ### 1. Add the plugin
 
-1. Download the latest `dyspatch-<version>.plugin` from the
-   [releases page](https://github.com/getdyspatch/agent-skills/releases).
+1. Download [the latest `dyspatch.plugin`](https://github.com/getdyspatch/agent-skills/releases/latest/download/dyspatch.plugin).
 2. In Claude (web or Desktop), go to **Customize → Plugins**
    ([claude.ai/customize/plugins](https://claude.ai/customize/plugins)).
 3. Click **Add → Upload plugin** and choose the `.plugin` file.
