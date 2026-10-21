@@ -1,7 +1,7 @@
 {
   "name": "dyspatch",
   "version": "0.2.0",
-  "description": "Build production emails in Dyspatch with Claude, from your existing workspaces, themes, blocks, brand guidelines and image library, via the Dyspatch MCP server.",
+  "description": "Build, QA and review production emails in Dyspatch with Claude, from your existing workspaces, themes, blocks, brand guidelines and image library, via the Dyspatch MCP server. Includes skills to create emails, run a QA checklist, and audit blocks for hardcoded theme overrides.",
   "author": {
     "name": "Dyspatch"
   },

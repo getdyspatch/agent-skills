@@ -43,6 +43,22 @@ them. The report comes as Markdown, an HTML page or a Word document.
 If your Claude app can drive a browser (a built-in browser or a browser extension), sign in to Dyspatch there when
 asked and the skill will also check the email visually on desktop and phone widths and work with device previews.
 
+### /dyspatch:review-block-overrides
+Reviews the blocks in your account (or one theme's blocks) for hardcoded visual styles that override your themes
+and stop a block working across themes:
+
+- **Colours and backgrounds**, **typography** and **borders** set to fixed values on DML elements, on links, in
+  inline `style=""`, or in `<dys-style>` rules (with `!important` called out)
+- Optionally, **spacing** (padding and margins)
+- Theme variables (`@{...}`), button variants and comments aren't flagged
+- Blocks **not assigned to any theme** and blocks **only in archived themes**
+- The most common hardcoded colours, which are good candidates for theme colours or variables
+- Template usage for the worst offenders, so you know which fixes affect live emails
+
+It writes a Markdown report with every block linked to its code in Dyspatch, and summarizes the top findings in
+chat. It's read-only and changes nothing in your account. Useful before merging or adding themes, rebranding, or
+sharing blocks between brands.
+
 ## Requirements
 
 - The **Dyspatch MCP server** connected in Claude (Dyspatch MCP).
@@ -51,3 +67,6 @@ asked and the skill will also check the email visually on desktop and phone widt
 - For QA link checks: outbound web access from Claude's environment (otherwise the skill gives you a command to
   run them locally). Device previews in Dyspatch use your organization's Litmus quota, so the skill asks before
   running new ones.
+- For block reviews: code execution (Python 3.8+), and a Claude client that saves large tool results to a file.
+  A whole account's blocks come back as one large response (about 10 KB per block), so in other clients review
+  one theme at a time.

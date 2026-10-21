@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Audit Dyspatch blocks for hardcoded visual styles that override theme styles.
 
-Inputs are the raw JSON responses of three Dyspatch MCP tools, saved to files:
-  --blocks  GetAllBlocksQuery            (required: id, name, html per block)
-  --usage   GetMinimalBlocksListQuery    (optional: templatesCount, themesCount)
-  --themes  GetThemesWithBlockIDsQuery   (optional: active theme -> block IDs)
+Inputs are the raw JSON responses of two Dyspatch MCP tools, saved to files:
+  --blocks  get_blocks                 (required: id, name, html, themes[] per block)
+  --themes  get_themes_with_block_ids  (optional: active themes -> names)
 
 Output: a Markdown report (--out) and a one-line JSON summary on stdout.
 Only the standard library is used, so it runs anywhere Python 3.8+ exists.
@@ -26,6 +25,9 @@ PORTABLE = re.compile(r"@\{|\{\{|^(transparent|inherit|initial|unset)$", re.I)
 # Quote-aware tag matcher: attribute values may contain '>' (e.g. AMPscript <%...%>).
 TAG = re.compile(r"<([a-zA-Z][\w-]*)((?:\s+[^\s=>/]+(?:\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+))?)*)\s*/?>")
 ATTR = re.compile(r"([\w-]+)\s*=\s*(['\"])(.*?)\2", re.S)
+
+# Visual attributes outside dys-* elements: DML's link colour on <a>, and legacy HTML bgcolor anywhere.
+HTML_ATTRS = {("a", "color"): "color", ("*", "bgcolor"): "background-color"}
 
 
 def load(path):
@@ -85,6 +87,8 @@ def audit_html(src, is_flagged):
                     add("inline style", tag, p, sv)
             elif tag.startswith("dys-"):
                 add("attribute", tag, k, v)
+            elif (tag.lower(), k) in HTML_ATTRS or ("*", k) in HTML_ATTRS:
+                add("attribute", tag, HTML_ATTRS.get((tag.lower(), k)) or HTML_ATTRS[("*", k)], v)
     return out
 
 
@@ -100,7 +104,6 @@ def cell(s):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--blocks", required=True)
-    ap.add_argument("--usage")
     ap.add_argument("--themes")
     ap.add_argument("--out", default="block-override-report.md")
     ap.add_argument("--include-spacing", action="store_true", help="also flag padding/margin")
@@ -110,34 +113,26 @@ def main():
     flagged_prop = re.compile(rf"^({pattern})$").match
 
     blocks = load(a.blocks)["blocks"]["nodes"]
-    usage = {b["id"]: b for b in (load(a.usage) or {"blocks": {"nodes": []}})["blocks"]["nodes"]}
     themes_data = load(a.themes)
-    active_themes = collections.defaultdict(list)
-    if themes_data:
-        for t in themes_data["themes"]["nodes"]:
-            for b in t["blocks"]["nodes"]:
-                active_themes[b["id"]].append(t["name"])
+    theme_names = {t["id"]: t["name"] for t in themes_data["themes"]["nodes"]} if themes_data else {}
 
     rows, colour_values = [], collections.Counter()
     for b in blocks:
-        u = usage.get(b["id"], {})
         findings = audit_html(b.get("html") or "", flagged_prop)
-        names = active_themes.get(b["id"], [])
-        # themesCount (usage tool) includes archived themes; the themes tool lists active ones only.
-        archived = max(u.get("themesCount", 0) - len(names), 0) if themes_data else 0
+        theme_ids = [t["id"] for t in b.get("themes") or []]
+        # A block's themes[] includes archived themes; get_themes_with_block_ids lists active ones only.
+        names = [theme_names[t] for t in theme_ids if t in theme_names]
+        archived = len(theme_ids) - len(names) if themes_data else 0
         notes = []
-        if usage:
-            if u.get("templatesCount", 0) == 0:
-                notes.append("Not used in any template")
-            if u.get("themesCount", 0) == 0:
-                notes.append("Not assigned to any theme")
-            elif themes_data and not names:
-                notes.append("Only in archived themes")
+        if not theme_ids:
+            notes.append("Not assigned to any theme")
+        elif themes_data and not names:
+            notes.append("Only in archived themes")
         for f in findings:
             if category(f[2]) == "colour":
                 colour_values[f[3].upper()] += 1
-        rows.append(dict(id=b["id"], name=b["name"], themes=names, archived=archived,
-                         templates=u.get("templatesCount", "?"), findings=findings, notes=notes))
+        rows.append(dict(id=b["id"], name=b["name"], themes=names, theme_count=len(theme_ids) - archived,
+                         archived=archived, findings=findings, notes=notes))
     rows.sort(key=lambda r: (-len(r["findings"]), r["name"].lower()))
 
     flagged = [r for r in rows if r["findings"]]
@@ -152,24 +147,25 @@ def main():
          f"- Clean blocks: {len(rows) - len(flagged)}",
          f"- Total overrides: {total}", "",
          f"**Flagged:** {', '.join(cats)} properties set to a fixed value.  ",
-         "**Sources:** dys-* element attributes, inline `style=\"\"`, `<dys-style>` rules (`!important` marked).  ",
+         "**Sources:** dys-* element attributes, `<a color>` and `bgcolor` attributes, inline `style=\"\"`, "
+         "`<dys-style>` rules (`!important` marked).  ",
          "**Ignored:** theme/DML variables (`@{...}`), `transparent`/`inherit`, comments"
          + ("" if a.include_spacing else ", spacing/size/alignment") + ".", "",
          "## Summary", ""]
     if themes_data:
         L += ["Themes = active themes; archived theme assignments in brackets.", ""]
-    L += ["| Block | Overrides | " + " | ".join(c.title() for c in cats) + " | !important | Themes | Templates | Note |",
-          "|---|---|" + "---|" * len(cats) + "---|---|---|---|"]
+    L += ["| Block | Overrides | " + " | ".join(c.title() for c in cats) + " | !important | Themes | Note |",
+          "|---|---|" + "---|" * len(cats) + "---|---|---|"]
     for r in rows:
         c = collections.Counter(category(f[2]) for f in r["findings"])
         L.append(f"| {link(r)} | {len(r['findings'])} | " + " | ".join(str(c[k]) for k in cats)
-                 + f" | {sum(f[4] for f in r['findings'])} | {len(r['themes'])}{arch(r)} | {r['templates']} | {'; '.join(r['notes'])} |")
+                 + f" | {sum(f[4] for f in r['findings'])} | {r['theme_count']}{arch(r)} | {'; '.join(r['notes'])} |")
     L += ["", "## Most common hardcoded colour values", "", "| Value | Occurrences |", "|---|---|"]
     L += [f"| `{v}` | {n} |" for v, n in colour_values.most_common(15)]
     L += ["", "## Per-block detail", ""]
     for r in flagged:
         L += [f"### {r['name']}", "",
-              f"{link(r)} · `{r['id']}` · Themes: {', '.join(r['themes']) or '—'}{arch(r)} · Templates: {r['templates']}"
+              f"{link(r)} · `{r['id']}` · Themes: {', '.join(r['themes']) or r['theme_count'] or '—'}{arch(r)}"
               + (f" · **{'; '.join(r['notes'])}**" if r["notes"] else ""), "",
               "| Source | Element / selector | Property | Value |", "|---|---|---|---|"]
         L += [f"| {s} | `{cell(w)}` | {p} | `{cell(v)}`{' !important' if i else ''} |" for s, w, p, v, i in r["findings"]]
@@ -180,7 +176,8 @@ def main():
     notes = collections.Counter(n for r in rows for n in r["notes"])
     print(json.dumps(dict(report=a.out, blocks=len(rows), flagged=len(flagged), clean=len(rows) - len(flagged),
                           overrides=total, notes=notes,
-                          top_blocks=[dict(name=r["name"], overrides=len(r["findings"]), url=BLOCK_URL.format(id=r["id"]))
+                          top_blocks=[dict(id=r["id"], name=r["name"], overrides=len(r["findings"]), notes=r["notes"],
+                                           url=BLOCK_URL.format(id=r["id"]))
                                       for r in flagged[:5]],
                           top_colours=colour_values.most_common(5))))
 
