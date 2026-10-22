@@ -9,16 +9,17 @@ Earlier versions and release notes are on the [GitHub releases page](https://git
 
 ## The Dyspatch plugin
 
-The plugin lives in [`dyspatch-claude-plugin/`](dyspatch-claude-plugin/). It contains three skills:
+The plugin lives in [`dyspatch-claude-plugin/`](dyspatch-claude-plugin/). It contains four skills:
 
 | Skill | What it does |
 |---|---|
 | `/dyspatch:create-email` | Builds a new email in Dyspatch from a Word or PDF brief, a Figma frame, a screenshot, pasted copy or a one-line idea, using your existing workspaces, themes, blocks, brand guidelines and image library. It handles personalization, subject and preheader, translations, guardrail fixes and plain text, and can submit the email for approval. |
 | `/dyspatch:email-qa-checklist` | Runs a QA and proofing pass over an existing email: guardrails, links and images, spelling, accessibility, brand, personalization, localization, performance, compliance and your campaign brief. It reports findings by severity and can post them as comments in Dyspatch or apply fixes once you approve them. |
 | `/dyspatch:review-block-overrides` | Audits your blocks for hardcoded colours, fonts and borders that override your themes and stop blocks working across themes. It also flags blocks that aren't in any theme or are only in archived themes. Read-only. |
+| `/dyspatch:block-optimizer` | Analyzes all blocks, chosen themes or a workspace for unused, stale and duplicate blocks; names, descriptions and tag usage; style, accessibility and editability; hotlinked images, ESP tracking links and hardcoded links or HTML. It also checks how well blocks and themes use Dyspatch features: theme logo, variants, mirror layout, `show`, partials, `dys-repeat`, conditionals, block localization, dark mode and Lock Light Mode in Gmail. It reports in Markdown, HTML or PDF, and can apply the fixes you approve. |
 
-You don't have to type the skill name. Asking Claude to "build an email from this brief", "QA my spring sale email"
-or "which blocks have hardcoded styles?" picks the right skill. See the
+You don't have to type the skill name. Asking Claude to "build an email from this brief", "QA my spring sale email",
+"which blocks have hardcoded styles?" or "which of our blocks are unused or duplicated?" picks the right skill. See the
 [plugin README](dyspatch-claude-plugin/README.md) for full details of each skill.
 
 ### Requirements

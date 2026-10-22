@@ -59,6 +59,37 @@ It writes a Markdown report with every block linked to its code in Dyspatch, and
 chat. It's read-only and changes nothing in your account. Useful before merging or adding themes, rebranding, or
 sharing blocks between brands.
 
+### /dyspatch:block-optimizer
+Analyzes your block library (all blocks, the themes you pick, or every theme in a workspace) and tells you what
+to retire, fix or consolidate:
+
+- **Inventory:**
+  - unused blocks (no emails, drafts or blueprints)
+  - stale blocks, where no email using them has been edited in a year (you can change the window)
+  - blocks in no theme, and exact and near duplicates
+- **Clarity:** unhelpful names, missing or placeholder descriptions, sample copy left as defaults, and, if your
+  account has block tags, blocks that look like they're missing a tag
+- **Quality:** style consistency (hardcoded colours and fonts, off-palette colours), accessibility (alt text,
+  contrast, link text, small text), and editability (locked copy, duplicate or generic editable IDs)
+- **Links & images:**
+  - images hotlinked from outside Dyspatch or your own domains
+  - ESP click-tracking links copied from sent emails
+  - links without `https://`, `http://` links and hardcoded links
+  - raw HTML without a good reason, test-rendered to confirm it actually shows up
+- **Dyspatch features:**
+  - theme logo (`DYS.theme.logo`)
+  - variants, and variants and mirror layout switched on for common components
+  - dark-mode styles, and the theme's **Lock Light Mode in Gmail** setting
+  - `editable` and editable groups, `show`, partials and includes, `dys-repeat` and conditionals
+  - block-level localization, when your account localizes
+
+It asks only what you didn't say: which blocks to review, whether to just report or also fix, and the report
+format (Markdown, HTML page or PDF). You get one report file in that format.
+
+In fix mode it shows every change before saving, backs up each block and theme first, and never deletes blocks;
+at most, it removes unused blocks from a theme. Two things you change in Dyspatch yourself, because the MCP can't:
+the Lock Light Mode in Gmail toggle, and block tags.
+
 ## Requirements
 
 - The **Dyspatch MCP server** connected in Claude (Dyspatch MCP).
@@ -70,3 +101,6 @@ sharing blocks between brands.
 - For block reviews: code execution (Python 3.8+), and a Claude client that saves large tool results to a file.
   A whole account's blocks come back as one large response (about 10 KB per block), so in other clients review
   one theme at a time.
+- For block optimization: code execution (Python 3.8+), and ideally a Claude client that saves large tool results to
+  a file (block data is about 15 KB per block). PDF reports use a local Chrome or Edge (or Playwright); without one
+  you get the HTML page to print to PDF.
